@@ -2,17 +2,19 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileUpload } from './FileUpload';
 import { TeamDisplay } from './TeamDisplay';
+import { InteractiveTeamDisplay } from './InteractiveTeamDisplay';
 import { parseFile } from '@/utils/fileParser';
 import { generateBalancedTeams } from '@/utils/teamGenerator';
-import { Member, TeamDistributionResult } from '@/types/team';
+import { Member, TeamDistributionResult, Team } from '@/types/team';
 import { useToast } from '@/hooks/use-toast';
-import { Shuffle, Users, Sparkles } from 'lucide-react';
+import { Shuffle, Users, Sparkles, Edit3, Eye } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 
 export function TeamMaker() {
   const [members, setMembers] = useState<Member[]>([]);
   const [teamResult, setTeamResult] = useState<TeamDistributionResult | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isInteractive, setIsInteractive] = useState(false);
   const { toast } = useToast();
 
   const handleFileSelect = async (file: File) => {
@@ -62,11 +64,31 @@ export function TeamMaker() {
     
     const result = generateBalancedTeams(members, 10);
     setTeamResult(result);
+    setIsInteractive(false);
     
     toast({
       title: "Tim telah diacak ulang!",
       description: "Tim baru telah terbentuk dengan distribusi yang seimbang.",
       variant: "default"
+    });
+  };
+
+  const handleTeamsUpdate = (updatedTeams: Team[]) => {
+    if (teamResult) {
+      setTeamResult({
+        ...teamResult,
+        teams: updatedTeams
+      });
+    }
+  };
+
+  const toggleInteractiveMode = () => {
+    setIsInteractive(!isInteractive);
+    toast({
+      title: isInteractive ? "Mode Normal" : "Mode Interaktif",
+      description: isInteractive 
+        ? "Kembali ke tampilan tim normal" 
+        : "Sekarang Anda dapat drag & drop anggota antar tim",
     });
   };
 
@@ -121,15 +143,29 @@ export function TeamMaker() {
                 </Button>
                 
                 {teamResult && (
-                  <Button 
-                    onClick={handleShuffleTeams}
-                    variant="outline"
-                    disabled={isProcessing}
-                    className="border-primary text-primary hover:bg-primary hover:text-white"
-                  >
-                    <Shuffle className="w-4 h-4 mr-2" />
-                    Acak Ulang
-                  </Button>
+                  <>
+                    <Button 
+                      onClick={handleShuffleTeams}
+                      variant="outline"
+                      disabled={isProcessing}
+                      className="border-primary text-primary hover:bg-primary hover:text-white"
+                    >
+                      <Shuffle className="w-4 h-4 mr-2" />
+                      Acak Ulang
+                    </Button>
+                    <Button 
+                      onClick={toggleInteractiveMode}
+                      variant="outline"
+                      disabled={isProcessing}
+                      className={isInteractive 
+                        ? "border-accent text-accent hover:bg-accent hover:text-white" 
+                        : "border-success text-success hover:bg-success hover:text-white"
+                      }
+                    >
+                      {isInteractive ? <Eye className="w-4 h-4 mr-2" /> : <Edit3 className="w-4 h-4 mr-2" />}
+                      {isInteractive ? "Lihat Normal" : "Edit Tim"}
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
@@ -138,7 +174,15 @@ export function TeamMaker() {
 
         {/* Team Results */}
         {teamResult && (
-          <TeamDisplay teams={teamResult.teams} companies={teamResult.companies} />
+          isInteractive ? (
+            <InteractiveTeamDisplay 
+              teams={teamResult.teams} 
+              companies={teamResult.companies}
+              onTeamsUpdate={handleTeamsUpdate}
+            />
+          ) : (
+            <TeamDisplay teams={teamResult.teams} companies={teamResult.companies} />
+          )
         )}
 
         {/* Instructions */}
