@@ -6,6 +6,34 @@ import autoTable from 'jspdf-autotable';
 export function exportToExcel(teams: Team[], filename: string = 'teams') {
   const workbook = XLSX.utils.book_new();
   
+  // Create main sheet with all team members
+  const allMembersData = [
+    ['Tim', 'No. Anggota', 'Nama', 'Perusahaan']
+  ];
+  
+  teams.forEach(team => {
+    team.members.forEach((member, index) => {
+      allMembersData.push([
+        `Tim ${team.id}`,
+        (index + 1).toString(),
+        member.name,
+        member.company
+      ]);
+    });
+    // Add empty row between teams for clarity
+    if (team.id < teams.length) {
+      allMembersData.push(['', '', '', '']);
+    }
+  });
+  
+  const allMembersSheet = XLSX.utils.aoa_to_sheet(allMembersData);
+  
+  // Auto-size columns
+  const maxWidths = [15, 15, 30, 25];
+  allMembersSheet['!cols'] = maxWidths.map(width => ({ width }));
+  
+  XLSX.utils.book_append_sheet(workbook, allMembersSheet, 'Semua Tim');
+  
   // Create summary sheet
   const summaryData = [
     ['Tim', 'Jumlah Anggota', 'Distribusi Perusahaan'],
@@ -20,22 +48,8 @@ export function exportToExcel(teams: Team[], filename: string = 'teams') {
   ];
   
   const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+  summarySheet['!cols'] = [{ width: 10 }, { width: 15 }, { width: 40 }];
   XLSX.utils.book_append_sheet(workbook, summarySheet, 'Ringkasan');
-  
-  // Create individual team sheets
-  teams.forEach(team => {
-    const teamData = [
-      ['No', 'Nama', 'Perusahaan'],
-      ...team.members.map((member, index) => [
-        (index + 1).toString(),
-        member.name,
-        member.company
-      ])
-    ];
-    
-    const teamSheet = XLSX.utils.aoa_to_sheet(teamData);
-    XLSX.utils.book_append_sheet(workbook, teamSheet, `Tim ${team.id}`);
-  });
   
   XLSX.writeFile(workbook, `${filename}.xlsx`);
 }
