@@ -14,8 +14,10 @@ export function generateBalancedTeams(members: Member[], teamSize: number = 10):
     return acc;
   }, {} as Record<string, Member[]>);
 
-  // Calculate number of teams needed
-  const numTeams = Math.ceil(members.length / teamSize);
+  // Calculate number of teams needed - prioritize full teams first
+  const fullTeams = Math.floor(members.length / teamSize);
+  const remainder = members.length % teamSize;
+  const numTeams = fullTeams + (remainder > 0 ? 1 : 0);
   
   // Initialize teams
   const teams: Team[] = Array.from({ length: numTeams }, (_, i) => ({
@@ -46,7 +48,12 @@ export function generateBalancedTeams(members: Member[], teamSize: number = 10):
       const idealCount = idealDistribution[company];
       
       for (let i = 0; i < idealCount && memberIndex < companyMembers.length; i++) {
-        if (teams[teamIndex].members.length < teamSize) {
+        // For full teams, ensure they get exactly teamSize members
+        // For remainder team (last team), allow fewer members
+        const isRemainderTeam = teamIndex === numTeams - 1 && remainder > 0;
+        const maxTeamSize = isRemainderTeam ? remainder : teamSize;
+        
+        if (teams[teamIndex].members.length < maxTeamSize) {
           teams[teamIndex].members.push(companyMembers[memberIndex]);
           teams[teamIndex].companyDistribution[company]++;
           memberIndex++;
@@ -59,7 +66,11 @@ export function generateBalancedTeams(members: Member[], teamSize: number = 10):
       // Find team with most space and best balance
       const availableTeams = teams
         .map((team, index) => ({ team, index }))
-        .filter(({ team }) => team.members.length < teamSize)
+        .filter(({ team, index }) => {
+          const isRemainderTeam = index === numTeams - 1 && remainder > 0;
+          const maxTeamSize = isRemainderTeam ? remainder : teamSize;
+          return team.members.length < maxTeamSize;
+        })
         .sort((a, b) => {
           // Prefer teams with fewer members of this company
           const aCount = a.team.companyDistribution[company];
