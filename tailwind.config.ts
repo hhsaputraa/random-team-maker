@@ -26,7 +26,8 @@ export default {
 				foreground: 'hsl(var(--foreground))',
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
+					foreground: 'hsl(var(--primary-foreground))',
+					glow: 'hsl(var(--primary-glow))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
@@ -43,6 +44,22 @@ export default {
 				accent: {
 					DEFAULT: 'hsl(var(--accent))',
 					foreground: 'hsl(var(--accent-foreground))'
+				},
+				success: {
+					DEFAULT: 'hsl(var(--success))',
+					foreground: 'hsl(var(--success-foreground))'
+				},
+				team: {
+					1: 'hsl(var(--team-1))',
+					2: 'hsl(var(--team-2))',
+					3: 'hsl(var(--team-3))',
+					4: 'hsl(var(--team-4))',
+					5: 'hsl(var(--team-5))',
+					6: 'hsl(var(--team-6))',
+					7: 'hsl(var(--team-7))',
+					8: 'hsl(var(--team-8))',
+					9: 'hsl(var(--team-9))',
+					10: 'hsl(var(--team-10))'
 				},
 				popover: {
 					DEFAULT: 'hsl(var(--popover))',
