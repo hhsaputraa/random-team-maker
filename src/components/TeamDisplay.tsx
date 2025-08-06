@@ -1,7 +1,9 @@
 import { Team } from '@/types/team';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Users, Building } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { exportToExcel, exportToCSV, exportToPDF } from '@/utils/exportTeams';
+import { Users, Building, Download, FileSpreadsheet, FileText, File } from 'lucide-react';
 
 interface TeamDisplayProps {
   teams: Team[];
@@ -55,6 +57,34 @@ export function TeamDisplay({ teams, companies }: TeamDisplayProps) {
             ))}
           </div>
         )}
+        
+        {/* Export Buttons */}
+        <div className="flex flex-wrap justify-center gap-3 mt-6">
+          <Button 
+            onClick={() => exportToExcel(teams)}
+            variant="outline"
+            className="border-primary text-primary hover:bg-primary hover:text-white"
+          >
+            <FileSpreadsheet className="w-4 h-4 mr-2" />
+            Export Excel
+          </Button>
+          <Button 
+            onClick={() => exportToPDF(teams)}
+            variant="outline"
+            className="border-destructive text-destructive hover:bg-destructive hover:text-white"
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            Export PDF
+          </Button>
+          <Button 
+            onClick={() => exportToCSV(teams)}
+            variant="outline"
+            className="border-accent text-accent hover:bg-accent hover:text-white"
+          >
+            <File className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
