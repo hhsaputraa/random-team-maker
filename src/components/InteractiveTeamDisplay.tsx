@@ -25,6 +25,7 @@ import {
 import {
   useSortable,
 } from '@dnd-kit/sortable';
+import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { useToast } from '@/hooks/use-toast';
 
@@ -232,8 +233,17 @@ export function InteractiveTeamDisplay({ teams: initialTeams, companies, onTeams
 
     if (!over || !draggedMember) return;
 
-    const [sourceTeamId, sourceMemberIndex] = active.id.toString().split('-').map(Number);
-    const targetTeamId = parseInt(over.id.toString().split('-')[0]);
+    const activeId = active.id.toString();
+    const overId = over.id.toString();
+
+    // Check if dropping to storage
+    if (overId === 'storage') {
+      handleDropToStorage();
+      return;
+    }
+
+    const [sourceTeamId, sourceMemberIndex] = activeId.split('-').map(Number);
+    const targetTeamId = parseInt(overId.split('-')[0]);
 
     if (sourceTeamId === targetTeamId) return;
 
@@ -419,61 +429,10 @@ export function InteractiveTeamDisplay({ teams: initialTeams, companies, onTeams
         </div>
 
         {/* Temporary Storage Area */}
-        <div className="sticky top-4 z-10 mb-6">
-          <Card 
-            className="p-4 bg-gradient-to-r from-primary/10 to-accent/10 border-2 border-dashed border-primary/30 shadow-lg backdrop-blur-sm"
-            onDragOver={(e) => {
-              e.preventDefault();
-              e.currentTarget.classList.add('border-primary', 'bg-primary/20');
-            }}
-            onDragLeave={(e) => {
-              e.currentTarget.classList.remove('border-primary', 'bg-primary/20');
-            }}
-            onDrop={(e) => {
-              e.preventDefault();
-              e.currentTarget.classList.remove('border-primary', 'bg-primary/20');
-              handleDropToStorage();
-            }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-primary animate-pulse" />
-                Penyimpanan Sementara
-              </h3>
-              <Badge variant="secondary" className="bg-primary/20 text-primary">
-                {memberPool.length} anggota
-              </Badge>
-            </div>
-            
-            {memberPool.length === 0 ? (
-              <div className="text-center py-6 text-muted-foreground">
-                <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Drop anggota disini untuk menyimpan sementara</p>
-                <p className="text-xs">Berguna untuk memindahkan anggota ke tim yang jauh</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 max-h-32 overflow-y-auto">
-                {memberPool.map((poolMember) => (
-                  <div
-                    key={poolMember.id}
-                    draggable
-                    onDragStart={(e) => {
-                      setDraggedMember({
-                        member: poolMember.member,
-                        teamId: -1, // -1 indicates from storage
-                        index: memberPool.findIndex(m => m.id === poolMember.id)
-                      });
-                    }}
-                    className="flex justify-between items-center py-2 px-3 rounded bg-background/80 border cursor-grab active:cursor-grabbing hover:bg-muted/50 transition-colors"
-                  >
-                    <span className="text-sm font-medium text-foreground">{poolMember.member.name}</span>
-                    <span className="text-xs text-muted-foreground">{poolMember.member.company}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        </div>
+        <StorageArea 
+          memberPool={memberPool} 
+          setDraggedMember={setDraggedMember} 
+        />
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {teams.map((team) => (
@@ -497,5 +456,63 @@ export function InteractiveTeamDisplay({ teams: initialTeams, companies, onTeams
         </DragOverlay>
       </div>
     </DndContext>
+  );
+}
+
+function StorageArea({ memberPool, setDraggedMember }: {
+  memberPool: MemberPool[];
+  setDraggedMember: (member: { member: Member; teamId: number; index: number } | null) => void;
+}) {
+  const { isOver, setNodeRef } = useDroppable({
+    id: 'storage',
+  });
+
+  return (
+    <div className="sticky top-4 z-10 mb-6">
+      <Card 
+        ref={setNodeRef}
+        className={`p-4 bg-gradient-to-r from-primary/10 to-accent/10 border-2 border-dashed border-primary/30 shadow-lg backdrop-blur-sm transition-colors ${
+          isOver ? 'border-primary bg-primary/20' : ''
+        }`}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-primary animate-pulse" />
+            Penyimpanan Sementara
+          </h3>
+          <Badge variant="secondary" className="bg-primary/20 text-primary">
+            {memberPool.length} anggota
+          </Badge>
+        </div>
+        
+        {memberPool.length === 0 ? (
+          <div className="text-center py-6 text-muted-foreground">
+            <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">Drop anggota disini untuk menyimpan sementara</p>
+            <p className="text-xs">Berguna untuk memindahkan anggota ke tim yang jauh</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 max-h-32 overflow-y-auto">
+            {memberPool.map((poolMember) => (
+              <div
+                key={poolMember.id}
+                draggable
+                onDragStart={(e) => {
+                  setDraggedMember({
+                    member: poolMember.member,
+                    teamId: -1, // -1 indicates from storage
+                    index: memberPool.findIndex(m => m.id === poolMember.id)
+                  });
+                }}
+                className="flex justify-between items-center py-2 px-3 rounded bg-background/80 border cursor-grab active:cursor-grabbing hover:bg-muted/50 transition-colors"
+              >
+                <span className="text-sm font-medium text-foreground">{poolMember.member.name}</span>
+                <span className="text-xs text-muted-foreground">{poolMember.member.company}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
   );
 }
