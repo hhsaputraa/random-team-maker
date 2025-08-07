@@ -47,7 +47,7 @@ interface MemberPool {
   sourceTeam: number;
 }
 
-function DraggableMember({ member, memberIndex, teamId }: DraggableMemberProps) {
+function DraggableMember({ member, memberIndex, teamId, onDoubleClick }: DraggableMemberProps & { onDoubleClick: () => void }) {
   const {
     attributes,
     listeners,
@@ -68,9 +68,11 @@ function DraggableMember({ member, memberIndex, teamId }: DraggableMemberProps) 
       style={style}
       {...attributes}
       {...listeners}
+      onDoubleClick={onDoubleClick}
       className={`flex justify-between items-center py-2 px-3 rounded bg-background/50 hover:bg-muted/50 transition-colors cursor-grab active:cursor-grabbing ${
         isDragging ? 'opacity-50' : ''
       }`}
+      title="Double-click untuk pindah ke penyimpanan sementara"
     >
       <span className="text-sm font-medium text-foreground">{member.name}</span>
       <span className="text-xs text-muted-foreground">{member.company}</span>
@@ -78,11 +80,12 @@ function DraggableMember({ member, memberIndex, teamId }: DraggableMemberProps) 
   );
 }
 
-function DroppableTeamCard({ team, companies, onMemberDrop, onRemoveTeam }: {
+function DroppableTeamCard({ team, companies, onMemberDrop, onRemoveTeam, onMoveToStorage }: {
   team: Team;
   companies: string[];
   onMemberDrop: (teamId: number) => void;
   onRemoveTeam: (teamId: number) => void;
+  onMoveToStorage: (teamId: number, memberIndex: number) => void;
 }) {
   const getTeamColor = (teamId: number) => {
     const colors = [
@@ -173,6 +176,7 @@ function DroppableTeamCard({ team, companies, onMemberDrop, onRemoveTeam }: {
                 member={member}
                 memberIndex={index}
                 teamId={team.id}
+                onDoubleClick={() => onMoveToStorage(team.id, index)}
               />
             ))}
           </SortableContext>
@@ -345,6 +349,36 @@ export function InteractiveTeamDisplay({ teams: initialTeams, companies, onTeams
     });
   };
 
+  const handleMoveToStorage = (teamId: number, memberIndex: number) => {
+    const team = teams.find(t => t.id === teamId);
+    if (!team || !team.members[memberIndex]) return;
+
+    const member = team.members[memberIndex];
+    const newPoolMember: MemberPool = {
+      id: `storage-${Date.now()}`,
+      member,
+      sourceTeam: teamId
+    };
+
+    setMemberPool([...memberPool, newPoolMember]);
+
+    const newTeams = teams.map(t => {
+      if (t.id === teamId) {
+        return {
+          ...t,
+          members: t.members.filter((_, index) => index !== memberIndex)
+        };
+      }
+      return t;
+    });
+
+    updateTeams(newTeams);
+    
+    toast({
+      title: "Anggota dipindahkan",
+      description: `${member.name} dipindahkan ke penyimpanan sementara`,
+    });
+  };
 
   const removeTeam = (teamId: number) => {
     const teamToRemove = teams.find(t => t.id === teamId);
@@ -431,7 +465,8 @@ export function InteractiveTeamDisplay({ teams: initialTeams, companies, onTeams
         {/* Temporary Storage Area */}
         <StorageArea 
           memberPool={memberPool} 
-          setDraggedMember={setDraggedMember} 
+          setDraggedMember={setDraggedMember}
+          onMoveToStorage={handleMoveToStorage}
         />
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -442,6 +477,7 @@ export function InteractiveTeamDisplay({ teams: initialTeams, companies, onTeams
               companies={companies}
               onMemberDrop={handleMemberDrop}
               onRemoveTeam={removeTeam}
+              onMoveToStorage={handleMoveToStorage}
             />
           ))}
         </div>
@@ -459,9 +495,10 @@ export function InteractiveTeamDisplay({ teams: initialTeams, companies, onTeams
   );
 }
 
-function StorageArea({ memberPool, setDraggedMember }: {
+function StorageArea({ memberPool, setDraggedMember, onMoveToStorage }: {
   memberPool: MemberPool[];
   setDraggedMember: (member: { member: Member; teamId: number; index: number } | null) => void;
+  onMoveToStorage: (teamId: number, memberIndex: number) => void;
 }) {
   const { isOver, setNodeRef } = useDroppable({
     id: 'storage',
@@ -488,7 +525,7 @@ function StorageArea({ memberPool, setDraggedMember }: {
         {memberPool.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
             <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Drop anggota disini untuk menyimpan sementara</p>
+            <p className="text-sm">Drop anggota disini atau double-click anggota untuk menyimpan sementara</p>
             <p className="text-xs">Berguna untuk memindahkan anggota ke tim yang jauh</p>
           </div>
         ) : (
@@ -505,6 +542,7 @@ function StorageArea({ memberPool, setDraggedMember }: {
                   });
                 }}
                 className="flex justify-between items-center py-2 px-3 rounded bg-background/80 border cursor-grab active:cursor-grabbing hover:bg-muted/50 transition-colors"
+                title="Drag untuk memindahkan ke tim"
               >
                 <span className="text-sm font-medium text-foreground">{poolMember.member.name}</span>
                 <span className="text-xs text-muted-foreground">{poolMember.member.company}</span>
