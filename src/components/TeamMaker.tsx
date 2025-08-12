@@ -10,6 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Shuffle, Users, Sparkles, Edit3, Eye } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 
+const TEAM_SIZE = 7;
+
 export function TeamMaker() {
   const [members, setMembers] = useState<Member[]>([]);
   const [teamResult, setTeamResult] = useState<TeamDistributionResult | null>(null);
@@ -49,7 +51,7 @@ export function TeamMaker() {
       return;
     }
 
-    const result = generateBalancedTeams(members, 10);
+    const result = generateBalancedTeams(members, TEAM_SIZE);
     setTeamResult(result);
     
     toast({
@@ -62,7 +64,7 @@ export function TeamMaker() {
   const handleShuffleTeams = () => {
     if (members.length === 0) return;
     
-    const result = generateBalancedTeams(members, 10);
+    const result = generateBalancedTeams(members, TEAM_SIZE);
     setTeamResult(result);
     setIsInteractive(false);
     
@@ -206,7 +208,7 @@ export function TeamMaker() {
                   </div>
                   <h4 className="font-semibold text-foreground mb-2">Buat Tim</h4>
                   <p className="text-sm text-muted-foreground">
-                    Klik tombol "Buat Tim" untuk membagi data menjadi tim berisi 10 orang
+                    Klik tombol "Buat Tim" untuk membagi data menjadi tim berisi 7 orang
                   </p>
                 </div>
                 <div className="flex flex-col items-center text-center">

@@ -1,6 +1,6 @@
 import { Member, Team, TeamDistributionResult } from '@/types/team';
 
-export function generateBalancedTeams(members: Member[], teamSize: number = 10): TeamDistributionResult {
+export function generateBalancedTeams(members: Member[], teamSize: number = 7): TeamDistributionResult {
   if (members.length === 0) {
     return { teams: [], totalMembers: 0, companies: [] };
   }
@@ -76,10 +76,14 @@ export function generateBalancedTeams(members: Member[], teamSize: number = 10):
           const aCount = a.team.companyDistribution[company];
           const bCount = b.team.companyDistribution[company];
           if (aCount !== bCount) return aCount - bCount;
-          
-          // Then prefer teams with more available space
-          const aSpace = teamSize - a.team.members.length;
-          const bSpace = teamSize - b.team.members.length;
+
+          // Then prefer teams with more available space considering remainder team size
+          const isRemainderTeamA = a.index === numTeams - 1 && remainder > 0;
+          const maxSizeA = isRemainderTeamA ? remainder : teamSize;
+          const isRemainderTeamB = b.index === numTeams - 1 && remainder > 0;
+          const maxSizeB = isRemainderTeamB ? remainder : teamSize;
+          const aSpace = maxSizeA - a.team.members.length;
+          const bSpace = maxSizeB - b.team.members.length;
           return bSpace - aSpace;
         });
 
