@@ -47,7 +47,7 @@ interface MemberPool {
   sourceTeam: number;
 }
 
-function DraggableMember({ member, memberIndex, teamId, onDoubleClick }: DraggableMemberProps & { onDoubleClick: () => void }) {
+function DraggableMember({ member, memberIndex, teamId, onMoveToStorage }: DraggableMemberProps & { onMoveToStorage: () => void }) {
   const {
     attributes,
     listeners,
@@ -68,14 +68,28 @@ function DraggableMember({ member, memberIndex, teamId, onDoubleClick }: Draggab
       style={style}
       {...attributes}
       {...listeners}
-      onDoubleClick={onDoubleClick}
+      onDoubleClick={onMoveToStorage}
       className={`flex justify-between items-center py-2 px-3 rounded bg-background/50 hover:bg-muted/50 transition-colors cursor-grab active:cursor-grabbing ${
         isDragging ? 'opacity-50' : ''
       }`}
-      title="Double-click untuk pindah ke penyimpanan sementara"
+      title="Klik tombol atau double-click untuk pindah ke penyimpanan sementara"
     >
       <span className="text-sm font-medium text-foreground">{member.name}</span>
-      <span className="text-xs text-muted-foreground">{member.company}</span>
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground">{member.company}</span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6"
+          onClick={(e) => {
+            e.stopPropagation();
+            onMoveToStorage();
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <Download className="h-3 w-3" />
+        </Button>
+      </div>
     </div>
   );
 }
@@ -176,7 +190,7 @@ function DroppableTeamCard({ team, companies, onMemberDrop, onRemoveTeam, onMove
                 member={member}
                 memberIndex={index}
                 teamId={team.id}
-                onDoubleClick={() => onMoveToStorage(team.id, index)}
+                onMoveToStorage={() => onMoveToStorage(team.id, index)}
               />
             ))}
           </SortableContext>
@@ -525,7 +539,7 @@ function StorageArea({ memberPool, setDraggedMember, onMoveToStorage }: {
         {memberPool.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
             <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Drop anggota disini atau double-click anggota untuk menyimpan sementara</p>
+            <p className="text-sm">Drop anggota disini atau gunakan tombol simpan pada anggota untuk menyimpan sementara</p>
             <p className="text-xs">Berguna untuk memindahkan anggota ke tim yang jauh</p>
           </div>
         ) : (
