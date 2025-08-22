@@ -12,7 +12,10 @@ export function exportToExcel(teams: Team[], filename: string = 'teams') {
   ];
   
   teams.forEach(team => {
-    team.members.forEach((member, index) => {
+    const sortedMembers = [...team.members].sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+    sortedMembers.forEach((member, index) => {
       allMembersData.push([
         `Tim ${team.id}`,
         (index + 1).toString(),
@@ -60,7 +63,10 @@ export function exportToCSV(teams: Team[], filename: string = 'teams') {
   ];
   
   teams.forEach(team => {
-    team.members.forEach((member, index) => {
+    const sortedMembers = [...team.members].sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+    sortedMembers.forEach((member, index) => {
       csvData.push([
         `Tim ${team.id}`,
         (index + 1).toString(),
@@ -117,7 +123,10 @@ export function exportToPDF(teams: Team[], filename: string = 'teams') {
     yPosition += 10;
     
     // Team members table
-    const tableData = team.members.map((member, index) => [
+    const sortedMembers = [...team.members].sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+    const tableData = sortedMembers.map((member, index) => [
       (index + 1).toString(),
       member.name,
       member.company
@@ -139,8 +148,9 @@ export function exportToPDF(teams: Team[], filename: string = 'teams') {
         fillColor: [240, 240, 240]
       }
     });
-    
-    yPosition = (doc as any).lastAutoTable.finalY + 20;
+
+    const autoTableDoc = doc as jsPDF & { lastAutoTable: { finalY: number } };
+    yPosition = autoTableDoc.lastAutoTable.finalY + 20;
   });
   
   doc.save(`${filename}.pdf`);
