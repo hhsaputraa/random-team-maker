@@ -86,8 +86,20 @@ export function exportToPDF(teams: Team[], filename: string = 'teams') {
   // Title
   doc.setFontSize(20);
   doc.text('Pembagian Tim', 14, 22);
-  
-  let yPosition = 40;
+  doc.setFontSize(12);
+  const gameInfo = [
+    'Tim 1 sampai 4: Game pertama',
+    'Tim 5 sampai 9: Game kedua',
+    'Tim 10 sampai 14: Game ketiga',
+    'Tim 15 sampai 19: Game keempat'
+  ];
+  let infoY = 32;
+  gameInfo.forEach(line => {
+    doc.text(line, 14, infoY);
+    infoY += 6;
+  });
+
+  let yPosition = infoY + 10;
   
   teams.forEach((team, teamIndex) => {
     // Check if we need a new page
