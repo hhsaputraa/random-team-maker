@@ -5,55 +5,44 @@ import autoTable from 'jspdf-autotable';
 
 export function exportToExcel(teams: Team[], filename: string = 'teams') {
   const workbook = XLSX.utils.book_new();
-  
-  // Create main sheet with all team members
-  const allMembersData = [
-    ['Tim', 'No. Anggota', 'Nama', 'Perusahaan']
+
+  // Gather all members with their team information
+  const allMembers = teams.flatMap(team =>
+    team.members.map(member => ({
+      name: member.name,
+      teamId: team.id
+    }))
+  );
+
+  // Sort members alphabetically by name
+  const sortedMembers = allMembers.sort((a, b) => a.name.localeCompare(b.name));
+
+  // Prepare attendance-style worksheet
+  const attendanceData = [
+    ['No', 'Nama Lengkap', 'Tim', 'Tanda Tangan']
   ];
-  
-  teams.forEach(team => {
-    const sortedMembers = [...team.members].sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
-    sortedMembers.forEach((member, index) => {
-      allMembersData.push([
-        `Tim ${team.id}`,
-        (index + 1).toString(),
-        member.name,
-        member.company
-      ]);
-    });
-    // Add empty row between teams for clarity
-    if (team.id < teams.length) {
-      allMembersData.push(['', '', '', '']);
-    }
+
+  sortedMembers.forEach((member, index) => {
+    attendanceData.push([
+      (index + 1).toString(),
+      member.name,
+      `Tim ${member.teamId}`,
+      '' // Empty cell for signature
+    ]);
   });
-  
-  const allMembersSheet = XLSX.utils.aoa_to_sheet(allMembersData);
-  
-  // Auto-size columns
-  const maxWidths = [15, 15, 30, 25];
-  allMembersSheet['!cols'] = maxWidths.map(width => ({ width }));
-  
-  XLSX.utils.book_append_sheet(workbook, allMembersSheet, 'Semua Tim');
-  
-  // Create summary sheet
-  const summaryData = [
-    ['Tim', 'Jumlah Anggota', 'Distribusi Perusahaan'],
-    ...teams.map(team => [
-      `Tim ${team.id}`,
-      team.members.length.toString(),
-      Object.entries(team.companyDistribution)
-        .filter(([_, count]) => count > 0)
-        .map(([company, count]) => `${company}: ${count}`)
-        .join(', ')
-    ])
+
+  const worksheet = XLSX.utils.aoa_to_sheet(attendanceData);
+
+  // Set column widths for readability
+  worksheet['!cols'] = [
+    { width: 5 }, // No
+    { width: 30 }, // Nama Lengkap
+    { width: 10 }, // Tim
+    { width: 25 }  // Tanda Tangan
   ];
-  
-  const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
-  summarySheet['!cols'] = [{ width: 10 }, { width: 15 }, { width: 40 }];
-  XLSX.utils.book_append_sheet(workbook, summarySheet, 'Ringkasan');
-  
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Kehadiran');
+
   XLSX.writeFile(workbook, `${filename}.xlsx`);
 }
 
